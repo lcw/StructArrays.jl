@@ -15,5 +15,6 @@ include("sort.jl")
 include("groupjoin.jl")
 include("lazy.jl")
 include("tables.jl")
+include("adapt.jl")
 
 end # module

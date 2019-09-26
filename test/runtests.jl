@@ -1,7 +1,7 @@
 using StructArrays
 using StructArrays: staticschema, iscompatible, _promote_typejoin
 using OffsetArrays: OffsetArray
-import Tables, PooledArrays, WeakRefStrings
+import Tables, PooledArrays, WeakRefStrings, Adapt
 using Test
 
 @testset "index" begin
@@ -645,4 +645,21 @@ end
     Base.showarg(io, s, false)
     str = String(take!(io))
     @test str == "StructArray(::Array{Int64,1}, ::Array{Int64,1})"
+end
+
+@testset "adapt" begin
+    struct CustomArray{T,N} <: AbstractArray{T,N}
+        data::AbstractArray
+    end
+    CustomArray(x::AbstractArray{T,N}) where {T,N} = CustomArray{T,N}(x)
+    Adapt.adapt_storage(::Type{<:CustomArray}, xs::AbstractArray) = CustomArray(xs)
+    Base.size(x::CustomArray, y...) = size(x.data, y...)
+    Base.getindex(x::CustomArray, y...) = getindex(x.data, y...)
+
+    t = StructArray(a = 1:10, b = rand(Bool, 10))
+    s = Adapt.adapt(CustomArray, t)
+
+    @test s isa StructArray
+    @test s.a isa CustomArray
+    @test s.b isa CustomArray
 end
